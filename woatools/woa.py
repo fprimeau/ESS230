@@ -5,6 +5,8 @@ import zipfile
 import gzip
 import shutil
 from tqdm import tqdm  # For progress bar
+import numpy as np 
+import pandas as pd 
 
 def get_woa(v, t, r):
     """
@@ -94,10 +96,11 @@ def get_woa(v, t, r):
         "n": "nitrate",
         "p": "phosphate",
         "o": "oxygen",
-        "O": "percent_saturation",
-        "A": "apparent_oxygen_utilization"
+        "O": "o2sat",
+        "A": "AOU"
     }
-    
+   #https://www.ncei.noaa.gov/data/oceans/woa/WOA23/DATA/AOU/csv/all/1.00/woa23_A_all_1.00_csv.tar.gz 
+   #https://www.ncei.noaa.gov/data/oceans/woa/WOA23/DATA/o2sat/csv/all/1.00/woa23_O_all_1.00_csv.tar.gz
     # Map time span abbreviations to descriptive names
     time_span_map = {
         "5564": "1955-1964",
@@ -140,11 +143,11 @@ def get_woa(v, t, r):
     r_mapped = resolution_map[r]
 
     # Prepare URL components
-    v_folder = v_full.lower()
+    v_folder = v_full
     csv_folder = "csv"
     time_folder = t
     resolution_folder = r_mapped
-    file_name = f"woa23_{v.lower()}_{t}_{r_mapped}_csv.tar.gz"
+    file_name = f"woa23_{v}_{t}_{r_mapped}_csv.tar.gz"
 
     # Construct the URL
     base_url = "https://www.ncei.noaa.gov/data/oceans/woa/WOA23/DATA"
@@ -174,29 +177,47 @@ def get_woa(v, t, r):
                             progress_bar.update(len(chunk))
         print("Downloaded file saved to:", local_path)
 
-    # Extract the archive
+   # Extract the archive and track extracted files
+    extracted_files = []
     if file_name.endswith(".tar.gz"):
         print("Extracting tar.gz archive...")
         with tarfile.open(local_path, "r:gz") as tar:
+            # Get list of all files in the archive
+            members = tar.getmembers()
+            # Extract all files
             tar.extractall(path=download_dir)
+            # Store the paths of extracted files
+            extracted_files = [os.path.join(download_dir, member.name) 
+                             for member in members]
         print("Extraction complete.")
     elif file_name.endswith(".zip"):
         print("Extracting zip archive...")
         with zipfile.ZipFile(local_path, "r") as zip_ref:
+            # Get list of all files in the archive
+            namelist = zip_ref.namelist()
+            # Extract all files
             zip_ref.extractall(download_dir)
+            # Store the paths of extracted files
+            extracted_files = [os.path.join(download_dir, name) 
+                             for name in namelist]
         print("Extraction complete.")
     else:
         print("Unknown file format; extraction not performed.")
+        return []
 
-    # Decompress all '.csv.gz' files in the download directory
-    gunzip_files(download_dir)
+    # Decompress only the .csv.gz files that were just extracted
+    for gz_file in [f for f in extracted_files if f.endswith('.csv.gz')]:
+        csv_path = gz_file[:-3]  # Strip off the .gz extension
+        print(f"Decompressing {gz_file} to {csv_path}")
+        with gzip.open(gz_file, 'rb') as f_in:
+            with open(csv_path, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        os.remove(gz_file)
+        # Add the decompressed file path to our list
+        extracted_files.append(csv_path)
 
-    # Collect and return the paths of all CSV files
-    csv_files = []
-    for root, dirs, files in os.walk(download_dir):
-        for file in files:
-            if file.endswith(".csv"):
-                csv_files.append(os.path.join(root, file))
+    # Return only the paths of CSV files that were just extracted
+    csv_files = [f for f in extracted_files if f.endswith('.csv')]
     return csv_files
 
 def gunzip_files(directory):
@@ -214,3 +235,158 @@ def gunzip_files(directory):
                     with open(csv_path, 'wb') as f_out:
                         shutil.copyfileobj(f_in, f_out)
                 os.remove(gz_path)
+
+def read_woa_csv(csv_files, field_code, time_code):
+    """
+    Read WOA CSV files into a 4D numpy array (lat, lon, depth, time).
+    
+    Parameters:
+    -----------
+    csv_files : list
+        List of paths to CSV files returned by get_woa()
+    field_code : str
+        Field type code for selecting specific data fields. Options:
+        
+         Field Name                           Code   Available in               
+         Objectively analyzed climatology      an    0.25°, 1.00°     
+         Statistical mean                      mn    0.25°, 1.00°, 5° 
+         Number of observations                dd    0.25°, 1.00°, 5° 
+         Seasonal/monthly minus annual clim.   ma    0.25°, 1.00°     
+         Standard deviation from stat. mean    sd    0.25°, 1.00°, 5° 
+         Standard error of stat. mean          se    0.25°, 1.00°, 5° 
+         Stat. mean minus obj. analyzed clim.  oa    0.25°, 1.00°     
+         Num. of means within radius of infl.  gp    0.25°, 1.00°     
+         Objectively analyzed std. deviation   sdo   0.25°, 1.00°     
+         Standard error of the analysis        sea   0.25°, 1.00°
+         
+    time_code : str
+        Time resolution code:
+        - '00': Annual average
+        - '01-12': Monthly values (January to December)
+        - '13-16': Seasonal values (Winter, Spring, Summer, Fall)
+        
+    Returns:
+    --------
+    data : numpy.ndarray
+        4D array with dimensions (latitude, longitude, depth, time)
+    coords : dict
+        Dictionary containing coordinate arrays:
+        - 'lat': latitude values
+        - 'lon': longitude values
+        - 'depth': depth levels
+        - 'time': time points
+    """
+    # Validate time code
+    if time_code == '00':
+        pattern = f'00{field_code}'
+        expected_files = 1
+    elif time_code == '01-12':
+        pattern = f'[0-9][0-9]{field_code}'  # Will match 01-12
+        expected_files = 12
+    elif time_code == '13-16':
+        pattern = f'1[3-6]{field_code}'  # Will match 13-16
+        expected_files = 4
+    else:
+        raise ValueError("time_code must be '00' (annual), '01-12' (monthly), or '13-16' (seasonal)")
+
+    # Filter files to match both field_code and time pattern
+    import re
+    filtered_files = [f for f in csv_files if re.search(pattern, f)]
+    if not filtered_files:
+        raise ValueError(f"No files found matching field code '{field_code}' and time code '{time_code}'")
+    
+    if len(filtered_files) != expected_files:
+        raise ValueError(f"Found {len(filtered_files)} files, expected {expected_files} for time code {time_code}")
+    
+    # Sort files to ensure consistent ordering
+    filtered_files.sort()
+    
+    # Read depth levels from the second line of first file
+    with open(filtered_files[0], 'r') as f:
+        _ = f.readline()  # Skip first line (variable info)
+        depth_line = f.readline().strip()
+        # Extract depths from the comma-separated list after "DEPTHS (M):"
+        depth_str = depth_line.split('DEPTHS (M):')[1]
+        depths = np.array([float(d) for d in depth_str.split(',')])
+
+    # Initialize lists to store coordinates
+    all_lats = set()
+    all_lons = set()
+    
+    # First pass: collect all unique lat/lon coordinates
+    for file in filtered_files:
+        with open(file, 'r') as f:
+            _ = f.readline()  # Skip header
+            _ = f.readline()  # Skip depth line
+            for line in f:
+                values = line.strip().split(',')
+                if len(values) >= 2:  # Ensure line has at least lat,lon
+                    try:
+                        lat, lon = float(values[0]), float(values[1])
+                        all_lats.add(lat)
+                        all_lons.add(lon)
+                    except ValueError:
+                        continue
+    
+    # Convert to sorted numpy arrays
+    lats = np.array(sorted(all_lats))
+    lons = np.array(sorted(all_lons))
+    
+    # Determine temporal resolution from number of files
+    if len(filtered_files) == 12:
+        n_time = 12  # Monthly data
+        time_values = np.arange(1, 13)
+    elif len(filtered_files) == 4:
+        n_time = 4   # Seasonal data
+        time_values = np.arange(1, 5)
+    elif len(filtered_files) == 1:
+        n_time = 1   # Annual average
+        time_values = np.array([0])
+    else:
+        raise ValueError(f"Unexpected number of CSV files: {len(filtered_files)}. Expected 1, 4, or 12.")
+
+    # Initialize output array with NaN values
+    data = np.full((len(lats), len(lons), len(depths), n_time), np.nan)
+    
+    # Create coordinate mappings for faster indexing
+    lat_idx = {lat: i for i, lat in enumerate(lats)}
+    lon_idx = {lon: i for i, lon in enumerate(lons)}
+    
+    # Second pass: fill the data array
+    for t, file in enumerate(filtered_files):
+        with open(file, 'r') as f:
+            _ = f.readline()  # Skip header
+            _ = f.readline()  # Skip depth line
+            for line in f:
+                values = line.strip().split(',')
+                if len(values) >= 3:  # Ensure line has data
+                    try:
+                        lat, lon = float(values[0]), float(values[1])
+                        data_values = values[2:]
+                        i = lat_idx[lat]
+                        j = lon_idx[lon]
+                        # Fill data for all available depths
+                        for k, val in enumerate(data_values):
+                            if val.strip():  # Check if value exists and is not empty
+                                try:
+                                    data[i, j, k, t] = float(val)
+                                except (ValueError, IndexError):
+                                    continue
+                    except (ValueError, KeyError):
+                        continue
+    
+    # Create coordinate dictionary
+    coords = {
+        'lat': lats,
+        'lon': lons,
+        'depth': depths,
+        'time': time_values
+    }
+    
+    return data, coords
+
+# ...existing code...
+
+if __name__ == "__main__":
+    # Add any test code here
+    pass
