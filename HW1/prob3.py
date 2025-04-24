@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
 import numpy as np
 import matplotlib.pyplot as plt
 from woatools import get_woa, read_woa_csv
