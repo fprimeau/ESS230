@@ -8,7 +8,7 @@ from tqdm import tqdm  # For progress bar
 import numpy as np 
 import pandas as pd 
 
-def get_woa(v, t, r):
+def get_woa(v, t, r, quiet = False):
     """
     csv_list = get_woa(v="t", t="decav", r="1.00")
     csv_list = get_woa(v="s", t="all", r="0.25")
@@ -50,7 +50,7 @@ def get_woa(v, t, r):
                - '1.00': 1.00-degree grid
                - '0.25': 0.25-degree grid
                - '5.00': 5.00-degree grid
-
+      quiet (bool): If True, suppresses download progress output (default: False)
     -------------------------------------------------------------------------
     The function constructs the file URL and downloads the archive into the
     'woa_downloads' directory. If the archive is already present, the download is skipped.
@@ -152,7 +152,8 @@ def get_woa(v, t, r):
     # Construct the URL
     base_url = "https://www.ncei.noaa.gov/data/oceans/woa/WOA23/DATA"
     download_url = f"{base_url}/{v_folder}/{csv_folder}/{time_folder}/{resolution_folder}/{file_name}"
-    print("Downloading from:", download_url)
+    if not quiet:
+        print("Downloading from:", download_url)
 
     # Create download directory if it doesn't exist
     download_dir = "woa_downloads"
@@ -161,7 +162,8 @@ def get_woa(v, t, r):
 
     # Check whether the archive file already exists
     if os.path.exists(local_path):
-        print(f"File {local_path} already exists. Skipping download.")
+        if not quiet:
+            print(f"File {local_path} already exists. Skipping download.")
     else:
         # Download the archive with a progress bar
         with requests.get(download_url, stream=True) as response:
@@ -175,12 +177,14 @@ def get_woa(v, t, r):
                         if chunk:
                             f.write(chunk)
                             progress_bar.update(len(chunk))
-        print("Downloaded file saved to:", local_path)
+        if not quiet:        
+            print("Downloaded file saved to:", local_path)
 
    # Extract the archive and track extracted files
     extracted_files = []
     if file_name.endswith(".tar.gz"):
-        print("Extracting tar.gz archive...")
+        if not quiet:
+            print("Extracting tar.gz archive...")
         with tarfile.open(local_path, "r:gz") as tar:
             # Get list of all files in the archive
             members = tar.getmembers()
@@ -189,9 +193,11 @@ def get_woa(v, t, r):
             # Store the paths of extracted files
             extracted_files = [os.path.join(download_dir, member.name) 
                              for member in members]
-        print("Extraction complete.")
+        if not quiet:
+            print("Extraction complete.")
     elif file_name.endswith(".zip"):
-        print("Extracting zip archive...")
+        if not quiet:
+            print("Extracting zip archive...")
         with zipfile.ZipFile(local_path, "r") as zip_ref:
             # Get list of all files in the archive
             namelist = zip_ref.namelist()
@@ -200,7 +206,8 @@ def get_woa(v, t, r):
             # Store the paths of extracted files
             extracted_files = [os.path.join(download_dir, name) 
                              for name in namelist]
-        print("Extraction complete.")
+        if not quiet:
+            print("Extraction complete.")
     else:
         print("Unknown file format; extraction not performed.")
         return []
@@ -208,7 +215,8 @@ def get_woa(v, t, r):
     # Decompress only the .csv.gz files that were just extracted
     for gz_file in [f for f in extracted_files if f.endswith('.csv.gz')]:
         csv_path = gz_file[:-3]  # Strip off the .gz extension
-        print(f"Decompressing {gz_file} to {csv_path}")
+        if not quiet:
+            print(f"Decompressing {gz_file} to {csv_path}")
         with gzip.open(gz_file, 'rb') as f_in:
             with open(csv_path, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
@@ -220,23 +228,7 @@ def get_woa(v, t, r):
     csv_files = [f for f in extracted_files if f.endswith('.csv')]
     return csv_files
 
-def gunzip_files(directory):
-    """
-    Walks through the given directory and decompresses any file
-    ending with '.csv.gz' into a plain .csv file, then removes the .csv.gz file.
-    """
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".csv.gz"):
-                gz_path = os.path.join(root, file)
-                csv_path = os.path.join(root, file[:-3])  # Strip off the .gz extension
-                print(f"Decompressing {gz_path} to {csv_path}")
-                with gzip.open(gz_path, 'rb') as f_in:
-                    with open(csv_path, 'wb') as f_out:
-                        shutil.copyfileobj(f_in, f_out)
-                os.remove(gz_path)
-
-def read_woa_csv(csv_files, field_code, time_code):
+def read_woa_csv(csv_files, field_code, time_code, quiet = False):
     """
     Read WOA CSV files into a 4D numpy array (lat, lon, depth, time).
     
@@ -384,9 +376,7 @@ def read_woa_csv(csv_files, field_code, time_code):
     }
     
     return data, coords
-
-# ...existing code...
-
+# Test the functions
 if __name__ == "__main__":
     # Add any test code here
     pass
