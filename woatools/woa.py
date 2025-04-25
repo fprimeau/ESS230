@@ -7,6 +7,63 @@ import shutil
 from tqdm import tqdm  # For progress bar
 import numpy as np 
 import pandas as pd 
+from .database import init_database, record_download, get_download_date
+from datetime import datetime
+
+
+def get_citation(variable=None):
+    """
+    Returns formatted citation for WOA 2023 data with actual download date.
+    
+    Parameters:
+    -----------
+    variable : str, optional
+        One-letter code for specific variable citation
+    """
+    download_dir = "woa_downloads"
+    access_date = get_download_date(download_dir, variable) if variable else None
+    
+    if not access_date:
+        access_date = datetime.now().strftime('%Y-%m-%d')
+        
+    citations = {
+        't': (
+            "Reagan, J.R., Boyer, T.P., García, H.E., Locarnini, R.A., Baranova, O.K., "
+            "Bouchard, C., Cross, S.L., Mishonov, A.V., Paver, C.R., Seidov, D., & "
+            "Dukhovskoy, D. (2024). World Ocean Atlas 2023, Volume 1: Temperature. "
+            f"NOAA Atlas NESDIS 89. DOI: 10.25923/54bh-1613. Accessed {access_date}."
+        ),
+        's': (
+            "Reagan, J.R., Seidov, D., Wang, Z., Dukhovskoy, D., Boyer, T.P., Locarnini, R.A., "
+            "Baranova, O.K., Mishonov, A.V., García, H.E., Bouchard, C., Cross, S.L., & "
+            "Paver, C.R. (2024). World Ocean Atlas 2023, Volume 2: Salinity. "
+            f"NOAA Atlas NESDIS 90. DOI: 10.25923/70qt-9574. Accessed {access_date}."
+        ),
+        'o': (
+            "García, H.E., Wang, Z., Bouchard, C., Cross, S.L., Paver, C.R., Reagan, J.R., "
+            "Boyer, T.P., Locarnini, R.A., Mishonov, A.V., Baranova, O.K., Seidov, D., & "
+            "Dukhovskoy, D. (2024). World Ocean Atlas 2023, Volume 3: Dissolved Oxygen, "
+            "Apparent Oxygen Utilization, and Oxygen Saturation. NOAA Atlas NESDIS 91. "
+            f"DOI: 10.25923/rb67-ns53. Accessed {access_date}."
+        ),
+        'n': (
+            "García, H.E., Bouchard, C., Cross, S.L., Paver, C.R., Wang, Z., Reagan, J.R., "
+            "Boyer, T.P., Locarnini, R.A., Mishonov, A.V., Baranova, O.K., Seidov, D., & "
+            "Dukhovskoy, D. (2024). World Ocean Atlas 2023, Volume 4: Dissolved Inorganic "
+            "Nutrients (phosphate, nitrate, silicate). A. Mishonov, Tech. Ed. NOAA Atlas "
+            f"NESDIS 92. DOI: 10.25923/39qw-7j08. Accessed {access_date}."
+        )
+    }
+    # Use same citation for all nutrients
+    citations['p'] = citations['n']
+    citations['i'] = citations['n']
+    
+    if variable is None:
+        return "\n\n".join(list(set(citations.values())))
+    elif variable in citations:
+        return citations[variable]
+    else:
+        raise ValueError(f"Invalid variable code. Valid codes are: {', '.join(citations.keys())}")
 
 def get_woa(v, t, r, quiet = False):
     """
@@ -99,8 +156,7 @@ def get_woa(v, t, r, quiet = False):
         "O": "o2sat",
         "A": "AOU"
     }
-   #https://www.ncei.noaa.gov/data/oceans/woa/WOA23/DATA/AOU/csv/all/1.00/woa23_A_all_1.00_csv.tar.gz 
-   #https://www.ncei.noaa.gov/data/oceans/woa/WOA23/DATA/o2sat/csv/all/1.00/woa23_O_all_1.00_csv.tar.gz
+
     # Map time span abbreviations to descriptive names
     time_span_map = {
         "5564": "1955-1964",
@@ -155,6 +211,11 @@ def get_woa(v, t, r, quiet = False):
     if not quiet:
         print("Downloading from:", download_url)
 
+    # Initialize download tracking database
+    download_dir = "woa_downloads"
+    os.makedirs(download_dir, exist_ok=True)
+    init_database(download_dir)
+
     # Create download directory if it doesn't exist
     download_dir = "woa_downloads"
     os.makedirs(download_dir, exist_ok=True)
@@ -179,6 +240,11 @@ def get_woa(v, t, r, quiet = False):
                             progress_bar.update(len(chunk))
         if not quiet:        
             print("Downloaded file saved to:", local_path)
+
+  # If download successful, record it
+    if not os.path.exists(local_path):
+        # ...existing download code...
+        record_download(download_dir, file_name, v)
 
    # Extract the archive and track extracted files
     extracted_files = []
