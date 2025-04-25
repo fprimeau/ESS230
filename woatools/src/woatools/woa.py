@@ -4,7 +4,7 @@ import tarfile
 import zipfile
 import gzip
 import shutil
-from tqdm import tqdm  # For progress bar
+from tqdm.auto import tqdm  # For progress bar
 import numpy as np 
 import pandas as pd 
 from .database import init_database, record_download, get_download_date

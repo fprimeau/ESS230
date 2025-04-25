@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "etopotools"
+version = "0.1.0"
+authors = [
+    {name = "Francois Primeau", email = "fprimeau@uci.edu"},
+]
+description = "Tools for downloading and processing ETOPO data"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "requests",
+    "tqdm",
+    "netCDF4",
+]

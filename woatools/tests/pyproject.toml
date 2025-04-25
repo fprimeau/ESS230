@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "woatools"
+version = "0.1"
+description = "ESS230 Tools for downloading and processing World Ocean Atlas 2023 data"
+authors = [
+    {name = "Francois Primeau", email = "fprimeau@uci.edu"}
+]
+dependencies = [
+    "numpy",
+    "pandas",
+    "requests",
+    "tqdm"
+]
