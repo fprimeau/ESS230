@@ -16,11 +16,11 @@ This directory contains **Julia** scripts (`prob1.jl` through `prob5.jl`) that r
 
 4. **Install the required packages** by entering the package manager. At the `julia>` prompt, type `]` to enter pkg mode, then:
    ```julia
-   (v1.x) pkg> add NetCDF   # for reading ETOPO NetCDF files
-   (v1.x) pkg> add GSW      # TEOS‑10 seawater routines
-   (v1.x) pkg> add Plots    # optional, for any plotting
-   (v1.x) pkg> activate .   # (optional) makes this folder a project environment
-   (v1.x) pkg> instantiate  # (optional) install from Project.toml if provided
+   (v1.x) pkg> add NetCDF          # for reading ETOPO NetCDF files
+   (v1.x) pkg> add GibbsSeaWater   # TEOS‑10 seawater routines
+   (v1.x) pkg> add Plots           # optional, for any plotting
+   (v1.x) pkg> activate .          # (optional) makes this folder a project environment
+   (v1.x) pkg> instantiate         # (optional) install from Project.toml if provided
    ```
    Then press Backspace or Ctrl+C to exit pkg mode.
 
