@@ -21,6 +21,14 @@ This script (`prob1.py`) downloads global topographic data from ETOPO 2022 and c
 ### Usage
 ```bash
 python prob1.py
+```
+
+
+### Results
+The script computes and prints
+- Ocean area m²
+- Total Earth surface area  m²
+- Ocean coverage %
 
 ## Problem 3: Global Ocean Temperature and Salinity Analysis
 
