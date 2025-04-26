@@ -30,6 +30,46 @@ The script computes and prints
 - Total Earth surface area  m²
 - Ocean coverage %
 
+---
+
+## Problem 2: Global Ocean Volume Calculation
+
+This script (`prob2.py`) uses ETOPO 2022 data to compute the total volume of the world's oceans.\
+The calculation assumes the volume element:
+
+$$
+dV = a^2 \cos(\phi) \, d\phi \, d\lambda \, dz
+$$
+
+where \(a\) is the mean radius of the Earth.
+
+### Features
+
+- Downloads ETOPO 2022 surface elevation data using `etopotools`
+- Calculates surface area elements on the sphere
+- Masks regions corresponding to ocean (height < 0)
+- Computes ocean volume by integrating ocean depth over the surface
+
+### Dependencies
+
+- etopotools (custom package for ETOPO 2022 data access)
+- numpy
+- matplotlib
+
+### Usage
+
+```bash
+python prob2.py
+```
+
+### Results
+
+The script computes and prints:
+
+- Total ocean volume in cubic meters (m³)
+
+---
+
 ## Problem 3: Global Ocean Temperature and Salinity Analysis
 
 This script (`prob3.py`) computes global volumetric averages of temperature and salinity using World Ocean Atlas 2023 data. 
@@ -56,3 +96,4 @@ python prob3.py
 The script computes and prints:
 - Global volumetric average temperature in °C
 - Global volumetric average salinity in g/kg
+
