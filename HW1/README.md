@@ -127,3 +127,38 @@ The script displays a figure with:
 - Depth on the vertical axis (in meters), with clear labels and gridlines
 - Insets (if enabled) highlighting the top 300 m structure
 
+---
+
+## Problem 5: TEOS-10 Coefficients and Global Salt & Freshwater Mass
+
+This script (`prob5.py`) uses the TEOS-10 Thermodynamic Equation of Seawater-2010 and 2023 World Ocean Atlas objectively-analyzed decadal temperature and salinity data to compute:
+- **a.** The volumetrically averaged thermal expansion coefficient (α) in the top 200 m of the ocean
+- **b.** The volumetrically averaged haline contraction coefficient (β) in the top 200 m of the ocean
+- **c.** The total mass of salt in the ocean
+- **d.** The total mass of freshwater in the ocean
+
+### Features
+- Downloads WOA23 decadal climatology of temperature and salinity at 1° resolution via `woatools`
+- Reads objectively-analyzed fields with `read_woa_csv(..., time_code="00")`
+- Computes horizontal (dA) and vertical (dz) volume elements
+- Applies TEOS-10 routines (`gsw.SA_from_SP`, `gsw.CT_from_t`, `gsw.alpha`, `gsw.beta`, `gsw.rho`)
+- Calculates volume-weighted mean α and β over top 200 m
+- Integrates to obtain total salt and freshwater masses over the full depth
+
+### Dependencies
+- woatools (custom package for WOA data access)
+- numpy
+- gsw (Gibbs SeaWater Toolbox)
+- matplotlib
+
+### Usage
+```bash
+python prob5.py
+```
+
+### Results
+The script computes and prints:
+- Volumetrically averaged thermal expansion coefficient **α** (1/K) for top 200 m
+- Volumetrically averaged haline contraction coefficient **β** (per g/kg) for top 200 m
+- Total mass of salt in the ocean (kg)
+- Total mass of freshwater in the ocean (kg)
