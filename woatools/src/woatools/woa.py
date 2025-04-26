@@ -170,7 +170,7 @@ def get_woa(v, t, r, quiet = False):
         "decav81B0": "1981-2010",
         "decav91C0": "1991-2020",
         "decav": "1955-2022",
-        "all": "all available data"
+        "all": "all available data"  # all only works for the nutrients
     }
 
     # Map user-friendly resolutions to WOA-compatible resolutions
