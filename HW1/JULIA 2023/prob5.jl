@@ -28,15 +28,15 @@ ds = [ b*(1-eps2) / (1-eps2*sin(phi[j])^2)^(3/2) for j in 1:length(phi) ]
 
 # cumulative arclength (trapz)
 function trapz(f,z)
-  I = 0.0
-  for k in 2:length(z)
-    dz = z[k] - z[k-1]
-    h  = 0.5*(f[k] + f[k-1])
-    I += dz*h
+    I = 0.0
+    for k in 2:length(z)
+      dz = z[k] - z[k-1]
+      h  = 0.5*(f[k] + f[k-1])
+      I += dz*h
+    end
+    return I
   end
-  return I
-end
-s = [ trapz(ds[1:j], phi[1:j]) for j in 1:length(phi) ]
+  s = [ trapz(ds[1:j], phi[1:j]) for j in 1:length(phi) ]
 
 using Plots
 plot(s/1e6, (phi.-phi_s)*(180/pi)*1e5,

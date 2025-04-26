@@ -48,6 +48,17 @@ for i in 1:length(lon), j in 1:length(lat)
   end
 end
 
+# cumulative arclength (trapz)
+function trapz(f,z)
+    I = 0.0
+    for k in 2:length(z)
+      dz = z[k] - z[k-1]
+      h  = 0.5*(f[k] + f[k-1])
+      I += dz*h
+    end
+    return I
+  end
+  
 # mask and weight
 V200 = sum([ dA[i,j]*sum(dz[1:K200[i,j]]) for i=1:length(lon), j=1:length(lat) ])
 Ialpha = sum([ dA[i,j]*trapz(alpha[i,j,1:K200[i,j]], depth[1:K200[i,j]]) for i=1:length(lon), j=1:length(lat) ])
