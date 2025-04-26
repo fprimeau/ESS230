@@ -24,7 +24,7 @@ This directory contains **Julia** scripts (`prob1.jl` through `prob5.jl`) that r
    ```
    Then press Backspace or Ctrl+C to exit pkg mode.
 
-5. **Verify** that you can `using NetCDF, GSW, Plots` without errors.
+5. **Verify** that you can `using NetCDF, GibbsSeaWater, Plots` without errors.
 
 ---
 
