@@ -1,76 +1,96 @@
-# ETOPO Global Relief Model Package
+[![PyPI version](https://badge.fury.io/py/etopotools.svg)](https://badge.fury.io/py/etopotools)  [![Build Status](https://github.com/fprimeau/ESS230/actions/workflows/ci.yml/badge.svg)](https://github.com/fprimeau/ESS230/actions)  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Python package for downloading, reading, and visualizing ETOPO 2022 global relief model data.
+# etopotools
+
+Python package for downloading, reading, and visualizing ETOPO 2022 global relief model data.
+
+[Documentation](https://github.com/fprimeau/ESS230/tree/main/etopotools) • [Issues](https://github.com/fprimeau/ESS230/issues)
 
 ## Features
-- Download ETOPO 2022 data at various resolutions
-- Multiple relief models: ice surface, bedrock, and geoid
-- Easy-to-use plotting functions
-- Proper citation generation
+
+- Download ETOPO 2022 data at three resolutions (15", 30", 60")
+- Relief models: ice surface, bedrock, geoid
+- Simple functions to read NetCDF into NumPy arrays
+- Plotting utility for global relief maps
+- Automatic citation generation
+- Caching and re-use of downloaded files
 
 ## Installation
 
+Supports Python 3.8+.  Requires netCDF4 and its HDF5 dependencies.
+
 ```bash
-cd /path/to/etopo
+# From PyPI
+pip install etopotools
+
+# From source (developer/editable mode)
+git clone https://github.com/fprimeau/ESS230.git
+cd ESS230/etopotools
 pip install -e .
 ```
 
-## Usage
+## Quickstart
 
 ```python
-from etopo import get_etopo, read_etopo, plot_etopo, get_citation
+from etopotools import get_etopo, read_etopo, plot_etopo, get_citation
 
-# Get proper citation
-print(get_citation())
+# 1. Citation for ETOPO
+print(get_citation())  # prints NOAA citation with access date
 
-# Download ice surface data at 60 arc-second resolution
-filename = get_etopo(model='ice', resolution='60', quiet=False)
+# 2. Download ice surface at 60" resolution
+fn = get_etopo(model='ice', resolution='60', quiet=False)
 
-# Read data into arrays
-height, lat, lon = read_etopo(filename)
+# 3. Read relief data into arrays
+height, lat, lon = read_etopo(fn)
 
-# Create visualization
-fig, ax = plot_etopo(height, lat, lon, title="Global Ice Surface Relief")
+# 4. Plot a global relief map
+fig, ax = plot_etopo(height, lat, lon, title='Global Ice Surface')
+ax.coastlines(); fig.show()
 ```
 
-## Available Data Options
+## API Reference
 
-### Relief Models
-- `'ice'`: Ice surface elevation
-- `'bed'`: Bedrock elevation
-- `'geoid'`: Geoid height
+### `get_etopo(model='ice', resolution='60', quiet=False)`
+Download an ETOPO 2022 NetCDF file.
 
-### Resolutions
-- `'15'`: 15 arc-seconds
-- `'30'`: 30 arc-seconds
-- `'60'`: 60 arc-seconds
+- **model** (`str`) – `'ice'`, `'bed'`, or `'geoid'`.
+- **resolution** (`str`) – `'15'`, `'30'`, or `'60'` (arc-seconds).
+- **quiet** (`bool`) – suppress output if `True`.
 
-## Functions
+**Returns**: local file path (`str`).
 
-### get_etopo(model='ice', resolution='60', quiet=False)
-Downloads ETOPO global relief model data.
+### `read_etopo(filename)`
+Read a NetCDF ETOPO file into NumPy.
 
-### read_etopo(filename)
-Reads ETOPO data from netCDF file.
+- **filename** (`str`) – path to `.nc`.
 
-### plot_etopo(height, lat, lon, title="Global Relief")
-Creates a global relief map.
+**Returns**: `(height, lat, lon)` where `height` is 2D array (m), `lat` and `lon` 1D arrays (°N, °E).
 
-### get_citation()
-Returns properly formatted citation with current access date.
+### `plot_etopo(height, lat, lon, title=None)`
+Plot relief using Matplotlib.
 
-## Dependencies
-- numpy
-- matplotlib
-- requests
-- tqdm
-- netCDF4
+- **height** (`ndarray`) – relief data (m).
+- **lat**, **lon** (`ndarray`) – coordinate vectors.
+- **title** (`str`, optional).
 
-## Data Citation
-NOAA National Centers for Environmental Information. 2022: ETOPO 2022 15 Arc-Second Global Relief Model. NOAA National Centers for Environmental Information. https://doi.org/10.25921/fd45-gt74
+**Returns**: `(fig, ax)` Matplotlib objects.
 
-## Author
-Francois Primeau (fprimeau@uci.edu)
+### `get_citation()`
+Generate a formatted citation string for NOAA ETOPO 2022.
+
+**Returns**: citation (`str`).
+
+## Configuration & Caching
+
+Downloaded `.nc` files are stored in `~/.etopo_downloads/` by default.  Repeat calls reuse existing files.
+
+## Contributing
+
+1. Fork the repo and create a feature branch.
+2. Install in editable mode and add tests under `tests/`.
+3. Submit a pull request.
 
 ## License
-This project is licensed under the MIT License.
+
+MIT © François Primeau
+
