@@ -73,15 +73,15 @@ for i in range(z_500m,len(z)):
 w = Q / A  # m/s
 
 # Create two-panel figure
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 10))
 
 # Plot Area vs depth
-ax1.plot(A, z, 'b-')
+ax1.plot(A, z, 'b-') 
 ax1.set_xlabel('Area (m²)')
 ax1.set_ylabel('Depth (m)')
 ax1.grid(True)
 ax1.set_title('Ocean Area vs Depth')
-ax1.set_aspect(1/4)
+#ax1.set_aspect(1/4)
 
 # Plot vertical velocity vs depth
 ax2.plot(w, z, 'r-')
@@ -89,7 +89,7 @@ ax2.set_xlabel('Vertical velocity (m/s)')
 ax2.set_ylabel('Depth (m)')
 ax2.grid(True)
 ax2.set_title('Vertical Velocity vs Depth')
-ax2.set_aspect(1/4)
+#ax2.set_aspect(1/4)
 
 # Format the figure
 fig.tight_layout()
